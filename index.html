@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Card Game</title>
-    <link rel="stylesheet" href="style.css">
-    <style type="text/css">
+    <style>
         body {
             display: flex;
             flex-direction: column;
@@ -24,14 +23,11 @@
 
         .game-board {
             display: grid;
-            grid-template-columns: repeat(4, 100px);
             grid-gap: 10px;
             margin-bottom: 20px;
         }
 
         .card {
-            width: 100px;
-            height: 100px;
             perspective: 1000px;
             cursor: pointer;
         }
@@ -69,7 +65,7 @@
             transform: rotateY(180deg);
         }
 
-        #reset-button, #start-button {
+        #reset-button, #start-button, #reset-level-button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -116,6 +112,7 @@
     
     <button id="start-button">Mulai Game</button>
     <button id="reset-button" style="display:none;">Reset Game</button>
+    <button id="reset-level-button" style="display:none;">Reset Level</button>
     
     <div id="level">Level: 1</div>
 
@@ -129,26 +126,33 @@
         <source src="lagugamesad.mp3" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
-<smal>semoga kamu suka ya😊</smal>
+    <small>semoga kamu suka ya😊</small>
     <script>
-        const cards = [
-            '🐶', '🐶', '🐱', '🐱',
-            '🐭', '🐭', '🐹', '🐹',
-            '🐰', '🐰', '🦊', '🦊',
-            '🐻', '🐻', '🐼', '🐼'
-        ];
-
+        let level = localStorage.getItem('level') ? parseInt(localStorage.getItem('level')) : 1;
+        const totalLevels = 1000;
+        let matchedPairs = 0;
         let firstCard = null;
         let secondCard = null;
         let lockBoard = false;
-        let level = localStorage.getItem('level') ? parseInt(localStorage.getItem('level')) : 1; // Ambil level dari Local Storage
-        const totalLevels = 100;
-        let matchedPairs = 0;
+        let cards = [];
 
         const bgMusic = document.getElementById('bg-music');
         const winAnimation = document.getElementById('win-animation');
+        const gameBoard = document.querySelector('.game-board');
 
-        document.getElementById('level').textContent = `Level: ${level}`; // Update tampilan level dari Local Storage
+        document.getElementById('level').textContent = `Level: ${level}`;
+
+        function createCards() {
+            const numPairs = Math.min(level, 12); // Maksimum 12 pasangan untuk menghindari terlalu banyak ikon
+            cards = [];
+            const icons = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐸', '🦁', '🐯', '🐨'];
+
+            for (let i = 0; i < numPairs; i++) {
+                cards.push(icons[i % icons.length]);
+                cards.push(icons[i % icons.length]);
+            }
+            shuffle(cards);
+        }
 
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -158,14 +162,24 @@
         }
 
         function createBoard() {
-            const gameBoard = document.querySelector('.game-board');
-            gameBoard.innerHTML = ''; // Clear existing cards
-            shuffle(cards);
+            gameBoard.innerHTML = '';
+            createCards();
+            const gridSize = Math.ceil(Math.sqrt(cards.length));
+            const cardSize = Math.min((window.innerWidth - (gridSize + 1) * 10) / gridSize, 100); // Ukuran kotak
+            gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, ${cardSize}px)`;
+            gameBoard.style.gridTemplateRows = `repeat(${gridSize}, ${cardSize}px)`;
+
             cards.forEach(card => {
                 const cardElement = document.createElement('div');
                 cardElement.classList.add('card');
                 cardElement.dataset.icon = card;
-                cardElement.innerHTML = '<div class="card-inner"><div class="card-front"></div><div class="card-back">' + card + '</div></div>';
+                cardElement.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front"></div>
+                        <div class="card-back">${card}</div>
+                    </div>`;
+                cardElement.style.width = `${cardSize}px`;
+                cardElement.style.height = `${cardSize}px`;
                 cardElement.addEventListener('click', flipCard);
                 gameBoard.appendChild(cardElement);
             });
@@ -187,7 +201,7 @@
         }
 
         function checkForMatch() {
-            let isMatch = firstCard.dataset.icon === secondCard.dataset.icon;
+            const isMatch = firstCard.dataset.icon === secondCard.dataset.icon;
 
             if (isMatch) {
                 disableCards();
@@ -225,7 +239,7 @@
                 setTimeout(() => {
                     winAnimation.classList.remove('active');
                     level++;
-                    localStorage.setItem('level', level); // Simpan level ke Local Storage
+                    localStorage.setItem('level', level);
                     document.getElementById('level').textContent = `Level: ${level}`;
                     matchedPairs = 0;
                     createBoard();
@@ -239,10 +253,22 @@
             bgMusic.play();
             document.getElementById('start-button').style.display = 'none';
             document.getElementById('reset-button').style.display = 'block';
+            document.getElementById('reset-level-button').style.display = 'block';
             createBoard();
         });
 
         document.getElementById('reset-button').addEventListener('click', createBoard);
+
+        document.getElementById('reset-level-button').addEventListener('click', () => {
+            level = 1;
+            localStorage.setItem('level', level);
+            document.getElementById('level').textContent = `Level: ${level}`;
+            matchedPairs = 0;
+            createBoard();
+        });
+
+        // Sesuaikan ukuran grid dan kotak ketika ukuran jendela berubah
+        window.addEventListener('resize', createBoard);
     </script>
 </body>
 </html>
