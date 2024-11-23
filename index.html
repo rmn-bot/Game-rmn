@@ -5,26 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Card Game</title>
     <style>
+        /* CSS Reset dan gaya dasar */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            overflow: hidden;
+        }
+
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
-            background-color: #2c3e50;
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             color: white;
             font-family: Arial, sans-serif;
         }
 
-        h1 {
-            margin-bottom: 20px;
+        /* Menyembunyikan elemen yang tidak aktif */
+        h1.hidden, h3.hidden, #username-display.hidden {
+            display: none;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                box-shadow: 0 0 5px #00f;
+            }
+            50% {
+                box-shadow: 0 0 20px #00f;
+            }
+        }
+
+        .glow {
+            position: relative;
+        }
+
+        .glow::after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 5px;
+            bottom: -10px;
+            left: 0;
+            background: transparent;
+            animation: glow 1.5s infinite;
+        }
+
+        .form-container {
+            text-align: center;
+        }
+
+        #username-input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            margin-bottom: 10px;
+        }
+
+        #confirm-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+        }
+
+        #loading {
+            display: none;
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        #loading span {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 6px solid white;
+            border-top: 6px solid #e74c3c;
+            border-radius: 50%;
+            animation: spin-fast 0.6s linear infinite;
+        }
+
+        @keyframes spin-fast {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #level {
+            margin: 20px;
+            font-size: 50px;
+            display: none;
+            color: red;
         }
 
         .game-board {
             display: grid;
-            grid-gap: 10px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            max-width: 90vw;
         }
 
         .card {
@@ -33,11 +134,11 @@
         }
 
         .card-inner {
+            position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.6s;
             transform-style: preserve-3d;
-            position: relative;
+            transition: transform 0.6s;
         }
 
         .card.flipped .card-inner {
@@ -45,27 +146,29 @@
         }
 
         .card-front, .card-back {
+            position: absolute;
             width: 100%;
             height: 100%;
-            position: absolute;
             backface-visibility: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
             border-radius: 8px;
+            font-size: 1.5rem;
+            color: white;
         }
 
         .card-front {
-            background-color: #3498db;
+            background-color: red;
         }
 
         .card-back {
             background-color: #ecf0f1;
+            color: #2c3e50;
             transform: rotateY(180deg);
         }
 
-        #reset-button, #start-button, #reset-level-button {
+        #reset-button {
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
@@ -73,50 +176,52 @@
             border-radius: 5px;
             background-color: #e74c3c;
             color: white;
-            margin: 5px;
-        }
-
-        #level {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-
-        .win-animation {
             position: absolute;
-            top: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 48px;
-            color: yellow;
-            opacity: 0;
-            transition: top 2s ease, opacity 2s ease;
-        }
-
-        .win-animation.active {
-            top: 50%;
-            opacity: 1;
+            bottom: 20px;
+            left: 20px;
+            display: none;
         }
 
         footer {
             margin-top: 20px;
             font-size: 14px;
         }
+
+        /* Memindahkan judul dan teks di bawahnya ke atas */
+#game-title, #music-message {
+            position: absolute;
+            top: 20px;
+            text-align: center;
+            width: 100%;
+        }
+
+        #game-title.glow {
+            text-shadow: 0 0 10px #00f, 0 0 20px #00f, 0 0 30px #00f, 0 0 40px #00f;
+        }
+
+        #music-message {
+            font-size: 1.5rem;
+        }
     </style>
 </head>
 <body>
-    <h1>Memory Card Game</h1>
-    <h4>meningkatkan daya ingat insya allah😇</h4>
-    <h3>SELAMAT BERMAIN & MENDENGARKA MUSIK😊</h3>
-    
-    <div class="game-board"></div>
-    
-    <button id="start-button">Mulai Game</button>
-    <button id="reset-button" style="display:none;">Reset Game</button>
-    <button id="reset-level-button" style="display:none;">Reset Level</button>
-    
-    <div id="level">Level: 1</div>
+    <h1 class="hidden glow" id="game-title">Memory Card Game</h1>
+    <h3 class="hidden" id="music-message"></h3>
 
-    <div class="win-animation" id="win-animation">Level Complete!</div>
+    <div class="form-container" id="form-container">
+        <input type="text" id="username-input" placeholder="Masukkan username" required>
+        <button id="confirm-button">Konfirmasi</button>
+        <div id="loading">
+            <span></span>
+            <p>Loading...</p>
+            <p id="username-display" class="hidden"></p>
+        </div>
+    </div>
+
+    <div id="level">Level: 1</div>
+    <div class="game-board" id="game-board"></div>
+
+    <button id="reset-button">Reset Game</button>
 
     <footer>
         <p>Ⓕ 2024 Ramon</p>
@@ -126,32 +231,96 @@
         <source src="lagugamesad.mp3" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
-    <small>semoga kamu suka ya😊</small>
+
     <script>
-        let level = localStorage.getItem('level') ? parseInt(localStorage.getItem('level')) : 1;
-        const totalLevels = 1000;
-        let matchedPairs = 0;
+        const confirmButton = document.getElementById("confirm-button");
+        const usernameInput = document.getElementById("username-input");
+        const formContainer = document.getElementById("form-container");
+        const loading = document.getElementById("loading");
+        const usernameDisplay = document.getElementById("username-display");
+        const gameTitle = document.getElementById("game-title");
+        const musicMessage = document.getElementById("music-message");
+        const levelElement = document.getElementById("level");
+        const gameBoard = document.getElementById("game-board");
+        const resetButton = document.getElementById("reset-button");
+        const bgMusic = document.getElementById("bg-music");
+
+        let level = localStorage.getItem("gameLevel") ? parseInt(localStorage.getItem("gameLevel"), 10) : 1;
         let firstCard = null;
         let secondCard = null;
         let lockBoard = false;
-        let cards = [];
+        let matchedPairs = 0;
 
-        const bgMusic = document.getElementById('bg-music');
-        const winAnimation = document.getElementById('win-animation');
-        const gameBoard = document.querySelector('.game-board');
+        confirmButton.addEventListener("click", () => {
+            const username = usernameInput.value.trim();
+            if (username === "") {
+                alert("Silakan masukkan username Anda!");
+                return;
+            }
 
-        document.getElementById('level').textContent = `Level: ${level}`;
+            usernameDisplay.textContent = `Hello, ${username}!`;
+            usernameDisplay.classList.add("blink", "hidden");
+            formContainer.style.display = "none";
+            loading.style.display = "block";
+            bgMusic.play();
 
-        function createCards() {
-            const numPairs = Math.min(level, 12); // Maksimum 12 pasangan untuk menghindari terlalu banyak ikon
-            cards = [];
-            const icons = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐸', '🦁', '🐯', '🐨'];
+            setTimeout(() => {
+                usernameDisplay.classList.remove("hidden");
+            }, 500);
+
+            setTimeout(() => {
+                loading.style.display = "none";
+                gameTitle.classList.add("blink");
+                gameTitle.classList.remove("hidden");
+                setTimeout(() => gameTitle.classList.remove("blink"), 1000);
+
+                musicMessage.classList.remove("hidden");
+                levelElement.style.display = "block";
+                gameBoard.style.display = "grid";
+                resetButton.style.display = "block";
+                levelElement.textContent = `Level: ${level}`;
+                createBoard(level);
+            }, 6000);
+        });
+
+        resetButton.addEventListener("click", () => {
+            level = 1;
+            localStorage.setItem("gameLevel", level);
+            matchedPairs = 0;
+            createBoard(level);
+            levelElement.textContent = `Level: ${level}`;
+        });
+
+        function createBoard(level) {
+            gameBoard.innerHTML = "";
+            const numPairs = level + 2;
+            const icons = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐸", "🦁", "🐯", "🐨"];
+            let cards = [];
 
             for (let i = 0; i < numPairs; i++) {
                 cards.push(icons[i % icons.length]);
                 cards.push(icons[i % icons.length]);
             }
+
             shuffle(cards);
+
+            const cardSize = Math.max(100 - level * 5, 60);
+            gameBoard.style.gridTemplateColumns = `repeat(auto-fit, minmax(${cardSize}px, 1fr))`;
+
+            cards.forEach((icon) => {
+                const card = document.createElement("div");
+                card.classList.add("card");
+                card.style.width = `${cardSize}px`;
+                card.style.height = `${cardSize}px`;
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-front"></div>
+                        <div class="card-back">${icon}</div>
+                    </div>
+                `;
+                card.addEventListener("click", () => flipCard(card, icon));
+                gameBoard.appendChild(card);
+            });
         }
 
         function shuffle(array) {
@@ -161,114 +330,51 @@
             }
         }
 
-        function createBoard() {
-            gameBoard.innerHTML = '';
-            createCards();
-            const gridSize = Math.ceil(Math.sqrt(cards.length));
-            const cardSize = Math.min((window.innerWidth - (gridSize + 1) * 10) / gridSize, 100); // Ukuran kotak
-            gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, ${cardSize}px)`;
-            gameBoard.style.gridTemplateRows = `repeat(${gridSize}, ${cardSize}px)`;
-
-            cards.forEach(card => {
-                const cardElement = document.createElement('div');
-                cardElement.classList.add('card');
-                cardElement.dataset.icon = card;
-                cardElement.innerHTML = `
-                    <div class="card-inner">
-                        <div class="card-front"></div>
-                        <div class="card-back">${card}</div>
-                    </div>`;
-                cardElement.style.width = `${cardSize}px`;
-                cardElement.style.height = `${cardSize}px`;
-                cardElement.addEventListener('click', flipCard);
-                gameBoard.appendChild(cardElement);
-            });
-        }
-
-        function flipCard() {
-            if (lockBoard) return;
-            if (this === firstCard) return;
-
-            this.classList.add('flipped');
+        function flipCard(card, icon) {
+            if (lockBoard || card.classList.contains("flipped")) return;
+            card.classList.add("flipped");
 
             if (!firstCard) {
-                firstCard = this;
+                firstCard = { card, icon };
                 return;
             }
 
-            secondCard = this;
+            secondCard = { card, icon };
             checkForMatch();
         }
 
         function checkForMatch() {
-            const isMatch = firstCard.dataset.icon === secondCard.dataset.icon;
-
-            if (isMatch) {
-                disableCards();
+            if (firstCard.icon === secondCard.icon) {
                 matchedPairs++;
-                if (matchedPairs === cards.length / 2) {
-                    levelComplete();
+                resetTurn();
+
+                if (matchedPairs === level + 2) {
+                    level++;
+                    localStorage.setItem("gameLevel", level);
+                    levelElement.textContent = `Level: ${level}`;
+                    matchedPairs = 0;
+                    createBoard(level);
                 }
             } else {
-                unflipCards();
-            }
-        }
-
-        function disableCards() {
-            firstCard.removeEventListener('click', flipCard);
-            secondCard.removeEventListener('click', flipCard);
-            resetBoard();
-        }
-
-        function unflipCards() {
-            lockBoard = true;
-            setTimeout(() => {
-                firstCard.classList.remove('flipped');
-                secondCard.classList.remove('flipped');
-                resetBoard();
-            }, 1500);
-        }
-
-        function resetBoard() {
-            [firstCard, secondCard, lockBoard] = [null, null, false];
-        }
-
-        function levelComplete() {
-            if (level < totalLevels) {
-                winAnimation.classList.add('active');
+                lockBoard = true;
                 setTimeout(() => {
-                    winAnimation.classList.remove('active');
-                    level++;
-                    localStorage.setItem('level', level);
-                    document.getElementById('level').textContent = `Level: ${level}`;
-                    matchedPairs = 0;
-                    createBoard();
-                }, 2000);
-            } else {
-                alert('You completed all levels!');
+                    firstCard.card.classList.remove("flipped");
+                    secondCard.card.classList.remove("flipped");
+                    resetTurn();
+                }, 1000);
             }
         }
 
-        document.getElementById('start-button').addEventListener('click', () => {
-            bgMusic.play();
-            document.getElementById('start-button').style.display = 'none';
-            document.getElementById('reset-button').style.display = 'block';
-            document.getElementById('reset-level-button').style.display = 'block';
-            createBoard();
-        });
+        function resetTurn() {
+            [firstCard, secondCard] = [null, null];
+            lockBoard = false;
+        }
 
-        document.getElementById('reset-button').addEventListener('click', createBoard);
-
-        document.getElementById('reset-level-button').addEventListener('click', () => {
-            level = 1;
-            localStorage.setItem('level', level);
-            document.getElementById('level').textContent = `Level: ${level}`;
-            matchedPairs = 0;
-            createBoard();
-        });
-
-        // Sesuaikan ukuran grid dan kotak ketika ukuran jendela berubah
-        window.addEventListener('resize', createBoard);
+        window.onload = () => {
+            if (level > 1) {
+                levelElement.textContent = `Level: ${level}`;
+            }
+        };
     </script>
 </body>
 </html>
